@@ -1,6 +1,7 @@
 {
   "name": "dsh-voice-input",
   "version": "0.1.0",
+  "author": "付玉龙",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lougyang/dsh-voice-input.git"
