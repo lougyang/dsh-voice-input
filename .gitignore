@@ -1,0 +1,10 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+voice_input.log
+*.wav
+
+# OS
+.DS_Store
+Thumbs.db

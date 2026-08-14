@@ -1,0 +1,18 @@
+# dsh-voice-input bundle patch：把本插件作为一个 Host 行插入组合。
+# 行 id 是稳定身份；config 被后层整段替换，故这里给出完整默认值。
+- insert:
+    - id: voice-input
+      name: dsh-voice-input
+      config:
+        # 全局热键（keyboard 库键名：单键 "f9" / 组合 "ctrl+alt+space"）
+        hotkey: f9
+        # toggle=按一次开/再按一次关；hold=按住说话松开结束
+        mode: toggle
+        # tiny / base / small / medium / large-v3
+        model: small
+        # zh / en / null(自动)
+        language: zh
+        # auto(有 N 卡自动 GPU) / cpu / cuda
+        device: auto
+        # 录音中每隔多少秒刷新一次「分块滚动」文字
+        previewInterval: 1.6

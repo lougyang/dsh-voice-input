@@ -1,0 +1,37 @@
+{
+  "name": "dsh-voice-input",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lougyang/dsh-voice-input.git"
+  },
+  "description": "系统级语音输入：全局热键录音，本地 Whisper 转写（中文/英文），自动注入当前光标处。纯本地运行，语音不出本机。首次使用自动下载 small 模型（运行期约 1GB 显存 / 1.5GB 内存）。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml",
+    "engine",
+    "README.md"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "voice-input",
+    "speech-to-text",
+    "whisper",
+    "dictation"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

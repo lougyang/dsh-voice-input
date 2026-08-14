@@ -1,0 +1,17 @@
+{
+  "hotkey": "f9",
+  "mode": "toggle",
+  "model": "small",
+  "language": "zh",
+  "device": "auto",
+  "compute_type": "default",
+  "samplerate": 16000,
+  "beam_size": 5,
+  "vad_filter": true,
+  "insert_mode": "paste",
+  "hf_endpoint": "https://hf-mirror.com",
+  "initial_prompt_zh": "以下是普通话的句子。",
+  "preview_interval": 1.6,
+  "history_size": 20,
+  "overlay_duration": 2.6
+}
