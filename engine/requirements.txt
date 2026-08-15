@@ -3,6 +3,8 @@ sounddevice>=0.4.6
 keyboard>=0.13.5
 pyperclip>=1.8.2
 numpy>=1.24
+pystray>=0.19.5
+Pillow>=10.0.0
 
 # NVIDIA GPU 推理依赖（无独显/纯 CPU 可删除，工具会自动回退 CPU）
 nvidia-cublas-cu12
