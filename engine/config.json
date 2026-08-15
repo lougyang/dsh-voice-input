@@ -1,0 +1,14 @@
+{
+  "hotkey": "f2",
+  "mode": "hold",
+  "model": "small",
+  "language": "zh",
+  "device": "auto",
+  "insert_mode": "paste",
+  "hf_endpoint": "https://hf-mirror.com",
+  "history_size": 500,
+  "record_enabled": true,
+  "record_hotkey": "f3",
+  "record_mode": "toggle",
+  "record_dir": ""
+}

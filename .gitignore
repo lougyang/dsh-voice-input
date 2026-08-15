@@ -1,3 +1,10 @@
+# Python（venv 已移到 %LOCALAPPDATA%，这里只是防手滑提交）
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.wav
+
 # OS
 .DS_Store
 Thumbs.db

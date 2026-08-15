@@ -1,40 +1,39 @@
 {
-  "name": "dsh-shutdown-button",
-  "version": "0.1.0",
+  "name": "dsh-voice-input",
+  "version": "0.2.0",
   "author": "付玉龙",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lougyang/dsh-shutdown-button.git"
+    "url": "git+https://github.com/lougyang/dsh-voice-input.git"
   },
-  "description": "DSH 网页右上角「关闭服务」按钮：点击弹出确认框，确认后关闭 DeepSeek 服务进程。",
+  "description": "系统级语音输入（DSH 插件）：挂载后自动在后台启动，按全局热键说话，本地 Whisper 转写并粘贴到当前光标处——在电脑任何程序里都能用，不只是 DSH。纯本地运行，语音不出本机。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
-    "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
-    "lib/client.js",
     "cordis.patch.yml",
-    "README.md"
+    "engine",
+    "README.md",
+    "AGENTS.md"
   ],
   "license": "MIT",
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
-    "shutdown",
-    "close-service"
+    "voice-input",
+    "speech-to-text",
+    "whisper",
+    "dictation"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
-    },
-    "client": {
-      "platform": "web"
     }
   }
 }

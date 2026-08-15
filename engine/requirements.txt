@@ -1,0 +1,10 @@
+faster-whisper>=1.1.0
+sounddevice>=0.4.6
+keyboard>=0.13.5
+pyperclip>=1.8.2
+numpy>=1.24
+
+# NVIDIA GPU 推理依赖（无独显/纯 CPU 可删除，工具会自动回退 CPU）
+nvidia-cublas-cu12
+nvidia-cudnn-cu12
+nvidia-cuda-runtime-cu12

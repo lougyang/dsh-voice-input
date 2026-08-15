@@ -1,5 +1,12 @@
-# dsh-shutdown-button bundle patch：把本插件作为一行 Host 插入组合。
+# dsh-voice-input bundle patch：把本插件作为一行 Host 插入组合。
 # id 是稳定身份，须与 lib/index.js 的 `name` 导出一致。
+# config 会通过环境变量 DSH_VOICE_CONFIG 注入给语音引擎，覆盖 engine/config.json。
 - insert:
-    - id: shutdown-button
-      name: dsh-shutdown-button
+    - id: voice-input
+      name: dsh-voice-input
+      config:
+        hotkey: f2          # 全局热键（keyboard 库键名）
+        mode: hold          # hold=按住说话松开结束；toggle=按一次开/再按一次关
+        model: small        # tiny / base / small / medium / large-v3
+        language: zh        # zh / en / null(自动)
+        device: auto        # auto(有N卡用GPU) / cpu / cuda
