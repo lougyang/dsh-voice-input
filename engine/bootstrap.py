@@ -17,6 +17,7 @@ import hashlib
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent
@@ -29,8 +30,12 @@ VENV = DATA_DIR / "venv"
 PY = VENV / "Scripts" / "python.exe"
 PYW = VENV / "Scripts" / "pythonw.exe"
 LOG = DATA_DIR / "bootstrap.log"
+LOCK = DATA_DIR / ".bootstrap.lock"
+MARKER = DATA_DIR / ".bootstrap-ok"
 
 MIRROR = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+_STALE_LOCK_SECONDS = 1800  # 锁超过 30 分钟视为残留（上一个 bootstrap 崩溃）
 
 
 def log(msg: str) -> None:
@@ -46,9 +51,34 @@ def requirements_hash() -> str:
     return hashlib.sha1(REQ.read_bytes()).hexdigest()[:12]
 
 
+def _acquire_lock() -> bool:
+    """原子地获取安装锁，防止多个 bootstrap 同时 pip 装到同一个 venv。"""
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        # 残留锁（上一个 bootstrap 崩溃没清理）超过阈值就删掉重试
+        if LOCK.exists():
+            try:
+                if time.time() - LOCK.stat().st_mtime > _STALE_LOCK_SECONDS:
+                    LOCK.unlink()
+            except Exception:
+                pass
+        fd = os.open(str(LOCK), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+
+def _release_lock() -> None:
+    try:
+        LOCK.unlink()
+    except Exception:
+        pass
+
+
 def ensure_venv() -> None:
-    marker = DATA_DIR / ".bootstrap-ok"
-    if PY.exists() and marker.exists() and marker.read_text(encoding="utf-8").strip() == requirements_hash():
+    if PY.exists() and MARKER.exists() and MARKER.read_text(encoding="utf-8").strip() == requirements_hash():
         return  # 环境已就绪且 requirements 未变
     log("creating venv at %s" % VENV)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -57,7 +87,7 @@ def ensure_venv() -> None:
     subprocess.check_call([str(PY), "-m", "pip", "install", "--upgrade", "pip", "-i", MIRROR])
     log("installing dependencies (this may take a few minutes) ...")
     subprocess.check_call([str(PY), "-m", "pip", "install", "-r", str(REQ), "-i", MIRROR])
-    marker.write_text(requirements_hash(), encoding="utf-8")
+    MARKER.write_text(requirements_hash(), encoding="utf-8")
     log("dependencies installed")
 
 
@@ -68,11 +98,23 @@ def run_engine() -> int:
 
 
 def main() -> int:
+    # 已有另一个 bootstrap 在装 → 等它装完；装完（marker 出现）或锁释放后再往下走
+    waited = 0
+    while not _acquire_lock():
+        if MARKER.exists() or not LOCK.exists():
+            break
+        if waited >= _STALE_LOCK_SECONDS:
+            log("bootstrap: 等待其它安装超时")
+            return 1
+        time.sleep(1)
+        waited += 1
     try:
-        ensure_venv()
+        ensure_venv()  # 幂等：已就绪直接返回，否则安装
     except Exception as e:
         log("bootstrap failed: %s" % e)
         return 1
+    finally:
+        _release_lock()
     log("starting app.py via %s" % PYW)
     return run_engine()
 

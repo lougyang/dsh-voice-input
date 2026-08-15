@@ -76,15 +76,14 @@ def log(msg: str) -> None:
 
 
 def _setup_stdout() -> None:
-    # pythonw 下 stdout/stderr 为 None，print 会崩；重定向到日志文件
+    # pythonw 下 stdout/stderr 为 None，print 会崩。
+    # stdout 指向 devnull（避免 log() 的 print 与写文件重复），stderr 指向日志文件捕获报错。
     try:
-        if sys.stdout is None or sys.stderr is None:
+        if sys.stdout is None:
+            sys.stdout = open(os.devnull, "w", encoding="utf-8")
+        if sys.stderr is None:
             DATA_DIR.mkdir(parents=True, exist_ok=True)
-            f = open(LOG_PATH, "a", encoding="utf-8", buffering=1)
-            if sys.stdout is None:
-                sys.stdout = f
-            if sys.stderr is None:
-                sys.stderr = f
+            sys.stderr = open(LOG_PATH, "a", encoding="utf-8", buffering=1)
     except Exception:
         pass
 
