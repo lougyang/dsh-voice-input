@@ -58,6 +58,7 @@ DEFAULTS = {
     "record_hotkey": "f3",      # 录音热键
     "record_mode": "toggle",    # toggle / hold
     "record_dir": "",           # 录音保存目录；空则用 %USERPROFILE%\\Recordings
+    "idle_unload_seconds": 120,  # 空闲多少秒后自动卸载模型释放显存/内存；0=常驻不卸载
 }
 
 
@@ -138,6 +139,8 @@ class VoiceInputApp:
         self.model = None
         self.model_lock = threading.RLock()
         self.used_device = None
+        self._last_use_time = 0.0       # 最近一次用到模型的时间（用于空闲卸载）
+        self._last_unload_check = 0.0
         self.history = self._load_history()
         self.sr = int(cfg.get("samplerate", 16000))
         self._quit_flag = False
@@ -302,6 +305,7 @@ class VoiceInputApp:
             os.environ["PATH"] = os.pathsep.join(bin_dirs) + os.pathsep + os.environ.get("PATH", "")
 
     def _get_model(self):
+        self._last_use_time = time.time()  # 记录最近一次使用时间（用于空闲卸载）
         if self.model is not None:
             return self.model
         with self.model_lock:
@@ -329,6 +333,18 @@ class VoiceInputApp:
             self.model = m
             log("[info] 模型加载完成，设备=%s" % self.used_device)
             return m
+
+    def _unload_model_if_idle(self):
+        """空闲超时后卸载模型，释放显存/内存；下次用到再懒加载。"""
+        timeout = int(self.cfg.get("idle_unload_seconds", 120))
+        if timeout <= 0 or self.model is None or self.state != "idle":
+            return
+        if time.time() - self._last_use_time >= timeout:
+            self.model = None
+            self.used_device = None
+            import gc
+            gc.collect()
+            log("[info] 模型已空闲自动卸载，释放显存/内存")
 
     def _write_wav(self, path: Path, data: np.ndarray):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -496,6 +512,7 @@ class VoiceInputApp:
         v_model = tk.StringVar(value=str(self.cfg.get("model", "small")))
         v_language = tk.StringVar(value=str(self.cfg.get("language", "zh")))
         v_device = tk.StringVar(value=str(self.cfg.get("device", "auto")))
+        v_idle_unload = tk.StringVar(value=str(self.cfg.get("idle_unload_seconds", 120)))
 
         nb = ttk.Notebook(win)
         nb.pack(fill="both", expand=True, padx=10, pady=10)
@@ -535,7 +552,10 @@ class VoiceInputApp:
         ttk.Combobox(g3, textvariable=v_language, values=["zh", "en", "auto"], state="readonly", width=12).grid(row=1, column=1, sticky="w", padx=6)
         ttk.Label(g3, text="设备：").grid(row=2, column=0, sticky="w", pady=4)
         ttk.Combobox(g3, textvariable=v_device, values=["auto", "cuda", "cpu"], state="readonly", width=12).grid(row=2, column=1, sticky="w", padx=6)
-        ttk.Label(f2, text="说明：模型越大越准越慢；small 是中文准确率与速度的平衡点。\n改模型后下次识别才生效（懒加载）。", foreground="#666").pack(anchor="w", pady=8)
+        ttk.Label(g3, text="空闲卸载(秒)：").grid(row=3, column=0, sticky="w", pady=4)
+        ttk.Entry(g3, textvariable=v_idle_unload, width=12).grid(row=3, column=1, sticky="w", padx=6)
+        ttk.Label(g3, text="0=常驻不卸载；>0 表示闲置这么久后自动释放显存/内存（下次用时重新加载）").grid(row=3, column=2, sticky="w", padx=4)
+        ttk.Label(f2, text="说明：模型越大越准越慢；small 是中文准确率与速度的平衡点。\n模型只在第一次用时才加载（懒加载），闲置后按上面设置自动卸载。", foreground="#666").pack(anchor="w", pady=8)
 
         # ---- 历史记录 tab ----
         f3 = ttk.Frame(nb, padding=10)
@@ -604,6 +624,10 @@ class VoiceInputApp:
             self.cfg["model"] = v_model.get()
             self.cfg["language"] = v_language.get()
             self.cfg["device"] = v_device.get()
+            try:
+                self.cfg["idle_unload_seconds"] = max(0, int(float(v_idle_unload.get().strip() or 0)))
+            except Exception:
+                self.cfg["idle_unload_seconds"] = 120
             self._save_user_config()
             self._reload_history_size()
             self._register_hotkeys()
@@ -655,6 +679,13 @@ class VoiceInputApp:
                     self._show_settings()
                 except Exception as e:
                     log("[error] 打开设置失败: %s" % e)
+            now = time.time()
+            if now - self._last_unload_check >= 5.0:
+                self._last_unload_check = now
+                try:
+                    self._unload_model_if_idle()
+                except Exception as e:
+                    log("[warn] 空闲卸载检查失败: %s" % e)
             time.sleep(0.05)
         self._shutdown()
         log("语音输入已退出")

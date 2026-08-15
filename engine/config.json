@@ -10,5 +10,6 @@
   "record_enabled": true,
   "record_hotkey": "f3",
   "record_mode": "toggle",
-  "record_dir": ""
+  "record_dir": "",
+  "idle_unload_seconds": 120
 }
